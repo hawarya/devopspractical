@@ -1,0 +1,21 @@
+step 1: first create one folder ,,inside that folder  create 2 files 
+1)docker-compose.yml
+2)prometheus.yml
+
+  Step 2:
+  now open terminal note:docker desktop should be in open (start)
+give this commands in vscode terminal
+ 1)docker compose up -d
+  2) docker ps
+
+step 3:
+open browser 
+1)  promethus:   http://localhost:9090
+in promethus->status->target health   ->it will show some endpoints
+2)grafana:  http://localhost:3000  
+     in grafana->connection->datasource->prometheus->in last save and apply
+        ->go to dashboard->import dashboard-> (Find and import dashboards for common applications at grafana.com/dashboards )-> give (1860)  
+     then click load
+then u can see a dashboard
+
+
