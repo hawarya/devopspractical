@@ -1,0 +1,305 @@
+--Git Ash----
+cd Downloads
+chmod 400 your-key.pem
+ssh -i "your-key.pem" ubuntu@<EC2-Public-IP>
+or
+cd Desktop
+ssh -i "your-key.pem" ubuntu@<public-ip>
+
+---Install java---
+sudo apt update -y
+sudo apt install -y openjdk-17-jdk
+java -version
+
+--Install Jenkins----
+curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee \
+  /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+
+echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
+  https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
+  /etc/apt/sources.list.d/jenkins.list > /dev/null
+sudo apt update -y
+sudo apt install -y jenkins
+
+----Start Jenkins Service-----
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+sudo systemctl status jenkins
+
+----Access Jenkins---
+http://<public-ip>:8080
+
+---Add Security Groups---
+Step to Add Jenkins Port Rule
+
+Click “Add rule”
+
+Set:
+
+Type: Custom TCP
+
+Protocol: TCP
+
+Port range: 8080
+
+Source: 0.0.0.0/0
+
+Click Save rules
+
+---Unlock Jenkins--
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+Copy that password → paste into browser → continue.
+
+Then:
+
+Click Install suggested plugins
+
+Create admin username + password
+
+Finish setup
+
+**Copy that password → paste it into your browser → complete setup.
+
+---Create Git Repo----
+
+----index.html---
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Portal</title>
+</head>
+<body style="font-family: Arial; text-align:center; margin-top:50px;">
+    <h1>Welcome to the Student Portal</h1>
+    <p>Version 1.0 - Auto CI/CD with Jenkins 🚀</p>
+</body>
+</html>
+
+--Jenkins file----
+pipeline {
+    agent any
+
+    stages {
+        stage('Build') {
+            steps {
+                echo 'Building the project...'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo 'Running tests...'
+                sh 'echo "All tests passed!"'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo 'Deploying application...'
+                sh '''
+                    # Create deploy directory
+                    mkdir -p /var/www/html
+                    # Copy files (assuming Jenkins has permissions)
+                    cp -r * /var/www/html/
+                '''
+                echo 'Deployment complete! Visit your EC2 Public IP to view the site.'
+            }
+        }
+    }
+}
+-----Creat jobs---
+
+JOB 1: Build
+
+Open Jenkins → New Item
+
+Enter name → student-portal-build
+
+Select → Freestyle project
+
+Click OK
+
+Now configure:
+
+Source Code Management → Git
+
+Repository URL → https://github.com/<your-username>/student-portal-ci-cd.git
+
+Branches to build → */main (or your branch name)
+
+Build Triggers →
+✅ Check: “GitHub hook trigger for GITScm polling”
+
+Build Steps →
+
+Click “Add build step” → “Execute shell”
+
+Paste:
+
+echo "Building Student Portal project..."
+mkdir -p build
+cp index.html build/
+echo "Build successful!"
+
+
+Post-build Actions →
+
+“Build other projects”
+
+Project to build → student-portal-test
+
+Trigger only if build is stable ✅
+
+Click Save
+
+---Create Test jobs---
+
+JOB 2: Test
+
+New Item → name: student-portal-test
+
+Type: Freestyle project
+
+Click OK
+
+Configure:
+
+Build Steps →
+
+Step 2 — Return to Your Test Job
+
+Go back to student-portal-test → Configure
+
+Scroll to Build Steps
+
+Click Add build step → now you should see:
+👉 Copy artifacts from another project
+
+Then follow these settings:
+
+Project name: student-portal-build
+
+Which build: Latest successful build
+build/**
+
+Target directory: leave blank (or .)
+
+After that, keep your test shell step below it.
+
+
+Post-build Actions →
+
+“Build other projects”
+
+Project to build → student-portal-deploy
+
+Trigger only if build is stable ✅
+
+Click Save
+
+---Create deploy jobs--
+JOB 3: Deploy
+
+New Item → name: student-portal-deploy
+
+Type: Freestyle project
+
+Click OK
+
+Configure:
+
+Build Steps →
+
+“Execute shell”:
+
+echo "Deploying Student Portal..."
+sudo mkdir -p /var/www/html
+sudo cp index.html /var/www/html/
+echo "Deployment complete! Visit your EC2 public IP."
+
+
+Click Save
+
+---create webhook---
+http://<your-ec2-public-ip>:8080/github-webhook/
+appl/jon-content
+
+---Make changes in code---
+
+
+--------------------------------another method---------------------------
+goto aws ubuntu
+
+
+
+#!/bin/bash
+
+# This script installs Jenkins on Ubuntu 24.04 LTS.
+
+echo "Starting Jenkins installation on Ubuntu 24.04..."
+
+# Step 1: Update the apt package list
+echo "Updating package lists..."
+sudo apt update -y
+
+# Step 2: Install Java Development Kit (JDK 17) - Jenkins prerequisite
+echo "Installing OpenJDK 17 JRE..."
+sudo apt install -y openjdk-17-jre
+
+# Verify Java installation
+if java -version &> /dev/null; then
+    echo "Java 17 installed successfully."
+else
+    echo "Error: Java 17 installation failed. Exiting."
+    exit 1
+fi
+
+# Step 3: Add Jenkins repository key
+echo "Adding Jenkins GPG key..."
+# Download the Jenkins GPG key
+curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee \
+  /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+
+# Step 4: Add Jenkins repository to sources list
+echo "Adding Jenkins repository to /etc/apt/sources.list.d/jenkins.list..."
+echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
+  https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
+  /etc/apt/sources.list.d/jenkins.list > /dev/null
+
+# Step 5: Update apt package list again to include Jenkins repository
+echo "Updating package lists after adding Jenkins repository..."
+sudo apt update -y
+
+# Step 6: Install Jenkins
+echo "Installing Jenkins..."
+sudo apt install -y jenkins
+
+# Step 7: Start Jenkins service
+echo "Starting Jenkins service..."
+sudo systemctl start jenkins
+
+
+then open jenkin
+
+sudo cat ...........
+
+then same step give above for build test
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
